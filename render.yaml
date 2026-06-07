@@ -1,0 +1,42 @@
+services:
+  - type: web
+    name: invitations-api
+    env: node
+    plan: free
+    buildCommand: cd backend && npm install && npm run db:migrate
+    startCommand: cd backend && npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DB_URL
+        fromDatabase:
+          name: invitations-db
+          property: connectionString
+      - key: FRONTEND_URL
+        fromService:
+          name: invitations-frontend
+          type: static_site
+          property: url
+      - key: ADMIN_PASSWORD
+        sync: false
+      - key: RATE_LIMIT_WINDOW
+        value: "15"
+      - key: RATE_LIMIT_MAX
+        value: "100"
+
+  - type: static_site
+    name: invitations-frontend
+    buildCommand: cd frontend && npm install && npm run build
+    staticPublishPath: frontend/dist
+    envVars:
+      - key: VITE_API_URL
+        fromService:
+          name: invitations-api
+          type: web_service
+          property: url
+
+databases:
+  - name: invitations-db
+    databaseName: invitations
+    plan: free
+    region: oregon
